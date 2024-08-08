@@ -5,3 +5,4 @@ from . import test_programs_phone_eligibility_deduplicate
 from . import test_programs
 from . import test_cycle_manager_new_cycle
 from . import test_queue_job_channel
+from . import test_registrant

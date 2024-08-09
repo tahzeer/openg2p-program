@@ -1,8 +1,8 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from odoo.tests import tagged
 from odoo.exceptions import ValidationError
+from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
 _logger = logging.getLogger(__name__)
@@ -10,31 +10,32 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestG2PRegistrant(TransactionCase):
-    def setUp(self):
-        super().setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        self.partner_model = self.env['res.partner']
-        self.program_model = self.env['g2p.program']
-        self.cycle_model = self.env["g2p.cycle"]
-        self.program_membership_model = self.env['g2p.program_membership']
-        self.cycle_membership_model = self.env['g2p.cycle.membership']
-        self.entitlement_model = self.env['g2p.entitlement']
+        cls.partner_model = cls.env['res.partner']
+        cls.program_model = cls.env['g2p.program']
+        cls.cycle_model = cls.env["g2p.cycle"]
+        cls.program_membership_model = cls.env['g2p.program_membership']
+        cls.cycle_membership_model = cls.env['g2p.cycle.membership']
+        cls.entitlement_model = cls.env['g2p.entitlement']
 
-        self.program_1 = self.program_model.create({"name": "A Program"})
-        self.program_2 = self.program_model.create({"name": "B Program"})
+        cls.program_1 = cls.program_model.create({"name": "A Program"})
+        cls.program_2 = cls.program_model.create({"name": "B Program"})
 
-        self.cycle_1 = self.cycle_model.create(
+        cls.cycle_1 = cls.cycle_model.create(
             {
                 "name": "Test Cycle 1",
-                "program_id": self.program_1.id,
+                "program_id": cls.program_1.id,
                 "start_date": datetime.now(),
                 "end_date": datetime.now(),
             }
         )
-        self.cycle_2 = self.cycle_model.create(
+        cls.cycle_2 = cls.cycle_model.create(
             {
                 "name": "Test Cycle 2",
-                "program_id": self.program_2.id,
+                "program_id": cls.program_2.id,
                 "start_date": datetime.now(),
                 "end_date": datetime.now(),
             }
@@ -89,11 +90,8 @@ class TestG2PRegistrant(TransactionCase):
         partner = self.partner_model.create({'name': 'Test Partner'})
         self.assertTrue(partner)
         
-        # Create related cycle memberships
         cycle_membership_1 = self.cycle_membership_model.create({"partner_id": partner.id, "cycle_id": self.cycle_1.id})
         cycle_membership_2 = self.cycle_membership_model.create({"partner_id": partner.id, "cycle_id": self.cycle_2.id})
-        
-        # Verify that the cycle memberships were created successfully
         self.assertTrue(cycle_membership_1, "Cycle membership 1 was not created successfully")
         self.assertTrue(cycle_membership_2, "Cycle membership 2 was not created successfully")
         

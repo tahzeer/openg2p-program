@@ -21,6 +21,7 @@ class TestCycleMembership(TransactionCase):
         cls.partner_model = cls.env['res.partner']
         cls.program_model = cls.env['g2p.program']
         cls.cycle_model = cls.env['g2p.cycle']
+        cls.entitlement_model = cls.env['g2p.entitlement']
 
         cls.partner_1 = cls.partner_model.create({'name': 'John Doe'})
         cls.partner_2 = cls.partner_model.create({'name': 'Jane Doe'})
@@ -165,7 +166,12 @@ class TestCycleMembership(TransactionCase):
         }
         self.assertEqual(form_data, form_data_expected)
 
-    def test_unlink(self):
+    def test_01_unlink(self):
+        cycle_membership = self.cycle_membership_model.create({
+            'partner_id': self.partner_1.id,
+            'cycle_id': self.cycle_2.id,
+        })
+
         cycle_membership_1 = self.cycle_membership_model.create({
             'partner_id': self.partner_1.id,
             'cycle_id': self.cycle_1.id,
@@ -183,3 +189,41 @@ class TestCycleMembership(TransactionCase):
         })
         with self.assertRaises(ValidationError):
             cycle_membership_2.unlink()
+
+    def test_02_unlink(self):
+        # Test deletion of cycle membership with 'approved' entitlement state
+        entitle_1 = self.entitlement_model.create({
+            "partner_id": self.partner_1.id,
+            "program_id": self.program_1.id,
+            "cycle_id": self.cycle_1.id,
+            "initial_amount": 1000.0,
+            "is_cash_entitlement": True,
+            "state": "approved",
+        })
+        self.cycle_1.write({'entitlement_ids': [entitle_1.id]})
+        cycle_membership_1 = self.cycle_membership_model.create({
+            'partner_id': self.partner_1.id,
+            'cycle_id': self.cycle_1.id,
+        })
+
+        with self.assertRaises(ValidationError):
+            cycle_membership_1.unlink()
+
+        # Test deletion of cycle membership without 'approved' entitlement state
+        entitle_2 = self.entitlement_model.create({
+            "partner_id": self.partner_2.id,
+            "program_id": self.program_2.id,
+            "cycle_id": self.cycle_2.id,
+            "initial_amount": 1000.0,
+            "is_cash_entitlement": True,
+            "state": "draft",
+        })
+        self.cycle_2.write({'state': 'draft'})
+        self.cycle_2.write({'entitlement_ids': [entitle_2.id]})
+        cycle_membership_2 = self.cycle_membership_model.create({
+            'partner_id': self.partner_2.id,
+            'cycle_id': self.cycle_2.id,
+        })
+        
+        cycle_membership_2.unlink()
+        self.assertFalse(self.cycle_membership_model.search([('id', '=', cycle_membership_2.id)]))
